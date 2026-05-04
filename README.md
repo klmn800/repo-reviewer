@@ -23,6 +23,16 @@ It produces a one-line verdict (`legit` / `mostly_legit` / `concerning` / `bs`),
 
 This is a per-repo code review, not a vibe check on the candidate.
 
+## A note on accuracy
+
+Repo Reviewer is a Claude-powered tool, and like any AI reviewer it can make mistakes. Common failure modes:
+
+- **Missed issues** — bugs or design problems a careful human would catch.
+- **Hallucinated findings** — things flagged as problems that aren't actually in the code.
+- **Confident hedging on facts it can't verify** — version numbers, model IDs, external API behavior, or anything time-sensitive that's outside its training data.
+
+Treat each review as **one input, not a verdict**. For high-severity findings, spot-check against the source before acting. For hiring or portfolio decisions, the tool is best used to surface things worth a closer look — not to make the call for you.
+
 ## Install
 
 ```bash

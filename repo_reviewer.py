@@ -574,6 +574,10 @@ def render_text_report(snap: RepoSnapshot, review: dict, model: str, usage: dict
     )
     if snap.truncated:
         lines.append("  Note: budget limits applied — not every source file was read.")
+    lines.append("")
+    lines.append("  AI-generated review. Treat findings as a starting point, not a verdict —")
+    lines.append("  verify them against the code before acting. AI reviewers can miss real")
+    lines.append("  issues and confidently flag things that aren't actually problems.")
     lines.append(bar)
     lines.append("")
     return "\n".join(lines)
