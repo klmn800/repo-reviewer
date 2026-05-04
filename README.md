@@ -138,6 +138,13 @@ working. F and G are listed as "planned" — code present but stubbed.
 ...
 ```
 
+## Privacy notes
+
+Two things to be aware of:
+
+- **Repo contents go to Anthropic.** The tool reads the source files of the repo you're reviewing and sends them to Anthropic's API. Don't point it at private repos that contain sensitive data unless you're comfortable with that. (For your own portfolio review use case, this is fine — public repos go up.)
+- **Your API key is stored in plaintext** in `~/.repo_reviewer/config.ini`. On macOS/Linux the file is chmod'd to owner-read-only (`0o600`). On Windows there's no equivalent step — the file is readable by anyone who can read your user profile. If that's a concern, use the `ANTHROPIC_API_KEY` environment variable instead of `--setup` and don't save the config.
+
 ## Tuning
 
 If you're reviewing a larger repo and want more thorough coverage, raise `total_char_budget` in `config.ini` (or pass `--char-budget`). The default keeps cost bounded for typical portfolio repos.

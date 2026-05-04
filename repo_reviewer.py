@@ -16,10 +16,12 @@ import argparse
 import configparser
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -135,12 +137,19 @@ def validate_github_url(url: str) -> tuple[str, str]:
     return owner, repo
 
 
-def clone_shallow(url: str, target_dir: str, verbose: bool = False) -> None:
-    """Clone a repository at depth 1 into target_dir."""
-    cmd = ["git", "clone", "--depth", "1", "--quiet", url, target_dir]
+def clone_shallow(url: str, target_dir: str, verbose: bool = False, timeout: int = 120) -> None:
+    """Clone a repository at depth 1 into target_dir.
+
+    The `--` separator before the URL prevents git from interpreting a
+    maliciously-crafted URL (e.g. starting with `--upload-pack=`) as a flag.
+    """
+    cmd = ["git", "clone", "--depth", "1", "--quiet", "--", url, target_dir]
     if verbose:
         print(f"  Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"git clone timed out after {timeout}s")
     if result.returncode != 0:
         raise RuntimeError(
             f"git clone failed (exit {result.returncode}):\n{result.stderr.strip()}"
@@ -572,7 +581,6 @@ def render_text_report(snap: RepoSnapshot, review: dict, model: str, usage: dict
 
 def _clean_topic(t: str) -> str:
     """Coerce a string into a valid GitHub topic: lowercase, hyphenated, max 35 chars."""
-    import re
     s = t.strip().lower()
     s = re.sub(r"[\s_]+", "-", s)        # spaces and underscores -> hyphens
     s = re.sub(r"[^a-z0-9-]", "", s)     # drop anything else
@@ -590,7 +598,6 @@ def _sort_by_severity(items: list[dict]) -> list[dict]:
 
 def _wrap(text: str, width: int, indent: int = 0) -> str:
     """Simple word-wrap that preserves paragraph breaks."""
-    import textwrap
     out_lines = []
     for para in text.split("\n"):
         if not para.strip():
@@ -886,7 +893,7 @@ Examples:
 def get_url(args: argparse.Namespace) -> str:
     if args.url:
         return args.url
-    if args.interactive or sys.stdin.isatty():
+    if args.interactive:
         try:
             url = input("GitHub repository URL: ").strip()
         except (EOFError, KeyboardInterrupt):
@@ -896,7 +903,11 @@ def get_url(args: argparse.Namespace) -> str:
             print("ERROR: no URL provided.", file=sys.stderr)
             sys.exit(1)
         return url
-    print("ERROR: provide a URL argument or use --interactive.", file=sys.stderr)
+    print(
+        "ERROR: provide a GitHub URL as a positional argument, or use --interactive.\n"
+        f"  Example: {_invocation()} https://github.com/owner/repo",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 
