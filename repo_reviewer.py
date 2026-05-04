@@ -289,6 +289,12 @@ Scores are 0-100. Use the full range:
 - 30-49: weak; significant problems
 - 0-29: broken, oversold, or non-functional
 
+Suggest 5-8 GitHub topic tags that characterize the repository. These must be:
+- Lowercase, hyphenated, no spaces, max 35 characters each (GitHub topic format).
+- Established/popular tags where they fit — e.g. prefer `claude-api` over `claude-anthropic-api`, `cli` over `command-line`, `react` over `reactjs`.
+- A reasonable mix: language/framework, domain or use-case, project type. Don't waste slots on uninformative tags like `code` or `software`.
+- Accurate to what the code actually does, not what the README aspires to.
+
 Tag every concern and security flag with a severity, and use the labels honestly:
 - HIGH:   Real bug, broken feature, or security issue that would matter to a user or maintainer.
 - MEDIUM: Real issue that's not blocking but should be addressed (UX bug, fragile pattern, missing validation that bites in realistic scenarios).
@@ -325,6 +331,13 @@ REVIEW_SCHEMA = {
             "required": ["substance", "correctness", "security", "polish"],
             "additionalProperties": False
         },
+        "suggested_topics": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 3,
+            "maxItems": 8,
+            "description": "5-8 GitHub topic tags characterizing the repo. Lowercase, hyphenated, max 35 chars each. Use established tags where possible."
+        },
         "strengths": {
             "type": "array",
             "items": {"type": "string"},
@@ -357,7 +370,7 @@ REVIEW_SCHEMA = {
             "description": "Specific security observations. Reference file/function where useful. Each item must have an honest severity tag — non-issues should be tagged NIT or omitted."
         }
     },
-    "required": ["verdict", "summary", "claims_vs_reality", "scores", "strengths", "concerns", "security_flags"],
+    "required": ["verdict", "summary", "claims_vs_reality", "scores", "suggested_topics", "strengths", "concerns", "security_flags"],
     "additionalProperties": False
 }
 
@@ -499,6 +512,16 @@ def render_text_report(snap: RepoSnapshot, review: dict, model: str, usage: dict
     lines.append(_wrap(review["summary"], 70))
     lines.append("")
 
+    topics = review.get("suggested_topics") or []
+    if topics:
+        lines.append("TOPICS")
+        lines.append("-" * 70)
+        # Sanitize to GitHub's topic rules just in case the model strays.
+        clean = [_clean_topic(t) for t in topics]
+        clean = [t for t in clean if t]
+        lines.append("  " + "  ".join(clean))
+        lines.append("")
+
     lines.append("CLAIMS vs. REALITY")
     lines.append("-" * 70)
     lines.append(_wrap(review["claims_vs_reality"], 70))
@@ -545,6 +568,16 @@ def render_text_report(snap: RepoSnapshot, review: dict, model: str, usage: dict
     lines.append(bar)
     lines.append("")
     return "\n".join(lines)
+
+
+def _clean_topic(t: str) -> str:
+    """Coerce a string into a valid GitHub topic: lowercase, hyphenated, max 35 chars."""
+    import re
+    s = t.strip().lower()
+    s = re.sub(r"[\s_]+", "-", s)        # spaces and underscores -> hyphens
+    s = re.sub(r"[^a-z0-9-]", "", s)     # drop anything else
+    s = re.sub(r"-+", "-", s).strip("-") # collapse and trim hyphens
+    return s[:35]
 
 
 _SEVERITY_RANK = {"HIGH": 0, "MEDIUM": 1, "LOW": 2, "NIT": 3}
