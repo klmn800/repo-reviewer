@@ -1,0 +1,23 @@
+# User config (contains API key)
+config.ini
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Generated reports
+reports/
+*.json.out
+*.txt.out
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,20 @@
+; Repo Reviewer configuration
+; Copy this file to config.ini and fill in your values.
+; Any value here can be overridden by command-line flags or environment vars.
+
+[API]
+; Your Anthropic API key. You can also set ANTHROPIC_API_KEY in the environment
+; instead of putting it here.
+anthropic_api_key = 
+
+; Model to use. Friendly aliases: sonnet, opus, opus-4-6, haiku
+; Or use a full ID: claude-sonnet-4-6, claude-opus-4-7, claude-haiku-4-5, etc.
+model = claude-sonnet-4-6
+
+[Limits]
+; How much code to send to the model. Bigger = more thorough but more expensive.
+; The total budget is a runaway-cost guard for huge repos; for typical
+; portfolios you'll never hit it. Lower it if you want to cap costs harder.
+total_char_budget = 600000
+max_files = 200
+max_chars_per_file = 200000
